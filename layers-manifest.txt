@@ -1,0 +1,9 @@
+# Layer repositories pinned for this workspace.
+# Each entry is: path<TAB>commit<TAB>remote (remote may be absent in the local repo-tool checkout).
+layers/meta-openembedded	dda0d53326017d6758ec6bdfdaf2f484c089d13f
+layers/meta-st/meta-st-openstlinux	e418de01b7e611c85a6d1634da4685ddf853c209
+layers/meta-st/meta-st-stm32mp-addons	97617f888513d89c4070f59bfdfa2a91e8175d5c
+layers/meta-st/meta-st-stm32mp	74cfa6813688bbbaea178ce885056c367671bb7f
+layers/meta-st/scripts	27b8b0df3b2f3515d5e51de65f54eff00ddacb82
+layers/openembedded-core/bitbake	f40a3a477d5241b697bf2fb030dd804c1ff5839f
+layers/openembedded-core	336eec6808710f260a5336ca8ca98139a80ccb14

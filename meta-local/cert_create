@@ -1,0 +1,48 @@
+#!/bin/bash
+# Shim translating ST's proprietary STM32_SigningTool_CLI-style invocation
+# (as hardcoded in tf-a-stm32mp.inc) into stm32mp-sign-tool's actual syntax.
+set -euo pipefail
+
+REAL_TOOL="$(dirname "$0")/tools/stm32mp-sign-tool"
+
+BIN_PATH=""
+OUT_PATH=""
+PRIVATE_KEY=""
+PASSWORD=""
+
+is_flag() {
+    [[ "$1" == --* || "$1" == -a || "$1" == -bin || "$1" == -o ]]
+}
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        -bin) BIN_PATH="$2"; shift 2 ;;
+        -o) OUT_PATH="$2"; shift 2 ;;
+        --private-key) PRIVATE_KEY="$2"; shift 2 ;;
+        --password)
+            # Only consume $2 as the password value if it's NOT itself a flag
+            # (handles the case where SIGN_KEY_PASS is empty and the shell
+            # collapses "--password ${SIGN_KEY_PASS}" into "--password" being
+            # immediately followed by the next real flag).
+            if [[ $# -ge 2 ]] && ! is_flag "$2"; then
+                PASSWORD="$2"; shift 2
+            else
+                shift 1
+            fi
+            ;;
+        --public-key|--type|-a) shift 2 ;;
+        --silent) shift 1 ;;
+        *) shift 1 ;;
+    esac
+done
+
+if [[ -z "$BIN_PATH" || -z "$OUT_PATH" || -z "$PRIVATE_KEY" ]]; then
+    echo "[cert_create shim] Missing required argument(s): -bin=$BIN_PATH -o=$OUT_PATH --private-key=$PRIVATE_KEY" >&2
+    exit 1
+fi
+
+if [[ -n "$PASSWORD" ]]; then
+    exec "$REAL_TOOL" -k "$PRIVATE_KEY" -p "$PASSWORD" -i "$BIN_PATH" -o "$OUT_PATH"
+else
+    exec "$REAL_TOOL" -k "$PRIVATE_KEY" -i "$BIN_PATH" -o "$OUT_PATH"
+fi

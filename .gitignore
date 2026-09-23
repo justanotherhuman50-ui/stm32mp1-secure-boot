@@ -1,0 +1,26 @@
+# Local tooling and repo-management metadata
+.agents/
+.codex/
+.repo/
+
+# Yocto/OpenEmbedded build output (regenerable)
+build/
+build-openstlinuxweston-stm32mp1/*
+!build-openstlinuxweston-stm32mp1/conf/
+!build-openstlinuxweston-stm32mp1/conf/**
+
+# Source layers are pinned in layers-manifest.txt, not vendored here
+layers/*
+!layers/.gitkeep
+
+# Private signing material and release bundles
+*.pem
+*.key
+*.zip
+
+# Generated firmware images; public certificate blobs are added explicitly
+fw-config.bin
+hw-config.bin
+nt-fw.bin
+tos-fw.bin
+tos-fw-extra*.bin

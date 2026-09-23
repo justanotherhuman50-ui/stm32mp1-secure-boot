@@ -1,0 +1,1 @@
+TF_A_TOOLS_PLATFORM = "stm32mp1"
