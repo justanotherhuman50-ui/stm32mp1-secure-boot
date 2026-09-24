@@ -1,0 +1,1 @@
+OPTEE_CONFIG[optee] = "${OPTEE_DEVICETREE_optee},CFG_STM32MP_PROFILE=secure_and_system_services CFG_ATTESTATION_PTA=y CFG_CRYPTO=y CFG_REE_FS=y"
