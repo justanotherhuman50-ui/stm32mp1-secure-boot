@@ -113,6 +113,61 @@ capture UART. If the ROM callback is
 not usable on D-tier, the boot result will identify that boundary; no OTP or
 certificate change is appropriate until then.
 
+## OP-TEE configuration and recipe build — 2026-09-23
+
+BitBake metadata inspection with `bitbake -e optee-os-stm32mp` succeeded in
+`build-openstlinuxweston-stm32mp1`. The `meta-local` append was applied. The
+normal configuration resolves to the existing `${OPTEE_DEVICETREE_optee}`
+followed by `CFG_STM32MP_PROFILE=secure_and_system_services`,
+`CFG_ATTESTATION_PTA=y`, `CFG_CRYPTO=y`, and `CFG_REE_FS=y`. The
+`opteemin` flag remained at its existing device-tree list and
+`CFG_STM32MP_PROFILE=system_services` value.
+
+`bitbake optee-os-stm32mp` completed successfully: all 1,773 scheduled tasks
+succeeded, including the OP-TEE compile, deploy, package, and QA tasks. The
+recipe's existing compile loop iterates over both configured entries, so this
+recipe invocation also generated `opteemin` variants; no separate
+configuration override was used. No full image was built and nothing was
+flashed.
+
+The normal `optee` deployment directory is
+`build-openstlinuxweston-stm32mp1/tmp-glibc/deploy/images/stm32mp1/optee/`.
+It contains, for each configured OP-TEE device tree, `tee-header_v2-*-optee.bin`,
+`tee-pager_v2-*-optee.bin`, `tee-pageable_v2-*-optee.bin`, and the matching
+`debug/tee-*-optee.elf`. For the target DK1 board, the files are:
+
+- `tee-header_v2-stm32mp157d-dk1-optee.bin`
+- `tee-pager_v2-stm32mp157d-dk1-optee.bin`
+- `tee-pageable_v2-stm32mp157d-dk1-optee.bin`
+- `debug/tee-stm32mp157d-dk1-optee.elf`
+
+The requested flags are present in the actual `do_compile` command lines.
+The log shows compilation of RSA and SHA-256 code, STM32 RNG support, and
+trusted-storage-related components without a configuration or compilation
+failure involving `CFG_ATTESTATION_PTA`, `CFG_CRYPTO`, `CFG_REE_FS`, RSA,
+SHA-256, RNG, or secure storage. This confirms the configured source compiled;
+it does not establish runtime behavior or successful TA attestation/storage
+operations.
+
+The compile log contains two non-fatal device-tree warnings for
+`interrupt_map` (`Failed prerequisite 'interrupt_provider'`) on DK2 trees.
+The build completed successfully despite them. The full-image build and device
+flash/runtime validation remain outstanding.
+
+Potential next steps:
+
+1. Preserve and record hashes for the four DK1 OP-TEE artifacts above before
+   combining them with other boot artifacts.
+2. Continue the active read-only OP-TEE reconnaissance: confirm the exact
+   source revision, inspect TA examples and attestation APIs, and document the
+   custom-TA packaging flow.
+3. After that review, choose the minimal TA scope and build/validate that TA
+   separately. Keep it independent of the parked rollback-counter/OTP work.
+4. When the board is available and a hardware test is authorized, use a
+   controlled full-image/FIP deployment and capture UART to validate the
+   previously modified TF-A authentication path and OP-TEE runtime behavior.
+   Do not burn OTPs or close the device.
+
 ## Safety constraints
 
 - Do not burn OTPs.
@@ -139,3 +194,37 @@ certificate change is appropriate until then.
 | 2026-09-22 | Timestamp audit completed | Signed TF-A artifacts: 19:03; signed DK1 FIPs and OP-TEE/U-Boot: 19:05; Weston rootfs: 19:31; kernel and kernel DTBs: 2026-08-15 15:27 |
 | 2026-09-22 | Created `stm32mp157d-dk1-boot-artifacts-20260922.zip` | SCP bundle contains 52 DK1/D-tier boot artifacts plus this investigation log; about 200 MiB compressed, 724 MiB uncompressed |
 | 2026-09-22 | Created `stm32mp157d-dk1-boot-artifacts-complete-20260922.zip` | Corrected bundle includes `metadata.bin`, all available DK1 core flash-layout TSVs, bootfs/core/userfs/vendorfs images, the new Weston rootfs, and the signed boot artifacts; 4.1 GiB ZIP |
+| 2026-09-23 | `bitbake -e optee-os-stm32mp` parsed successfully and showed the `meta-local` bbappend applied | Normal `optee` includes the original device-tree list plus secure-and-system-services profile, attestation PTA, crypto, and REE filesystem flags; `opteemin` retains its prior system-services configuration |
+| 2026-09-23 | `bitbake optee-os-stm32mp` completed successfully; all 1,773 scheduled tasks passed | Recipe compiled and deployed both existing configurations (`optee` and `opteemin`); it did not build the full image or flash a device |
+| 2026-09-23 | DK1 normal OP-TEE binaries and debug ELF deployed under `tmp-glibc/deploy/images/stm32mp1/optee/` | Header, pager, pageable, and debug ELF artifacts exist for `stm32mp157d-dk1`; compile command lines include all requested flags and no requested crypto/RNG/storage configuration errors were reported |
+| 2026-09-23 | Two non-fatal `interrupt_map`/`interrupt_provider` warnings in OP-TEE compile log | Warnings concern DK2 device trees; recipe build still completed successfully |
+
+## Monotonic-counter / OTP allocation — PARKED
+
+This branch is intentionally **PARKED**, not resolved. No files or fuses were
+changed as part of the counter-allocation work. The board is currently
+unavailable.
+
+Findings:
+
+- STM32MP15 OTP4 is the ROM anti-rollback counter and is not an available
+  custom word.
+- The two possible future approaches are native OTP4/ROM anti-rollback, or a
+  separate custom counter using a suitable reserved lower OTP word.
+- A custom word must not be selected until the complete OTP 0–31 map and all
+  currently consumed words are cross-checked.
+- Upper ECC OTP words are unsuitable for thermometer-style bit-by-bit
+  increments.
+
+Do not continue selecting an OTP word, designing the counter, or modifying any
+BSEC/PTA code until this architectural decision is reopened.
+
+## Active task: REMOTE ATTESTATION TA DEVELOPMENT
+
+The next task is read-only reconnaissance for a minimal OP-TEE remote-
+attestation TA, intentionally independent of the parked rollback-counter/PTA
+decision. The reconnaissance will locate the OP-TEE OS source and exact
+revision used by Yocto, inventory TA examples/templates and reusable
+attestation APIs/frameworks, and document how this project builds and packages
+custom TAs. No TA implementation or source-file modification is authorized
+yet.

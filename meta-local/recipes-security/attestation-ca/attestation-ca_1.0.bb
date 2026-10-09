@@ -12,6 +12,7 @@ DEPENDS = "optee-client"
 SRC_URI = "file://Makefile \
            file://attest_ca.c \
            file://attestation_ta.h \
+           file://attest_pubkey.c \
           "
 
 PV = "1.0"
@@ -24,4 +25,5 @@ do_compile() {
 do_install() {
     install -d ${D}${bindir}
     install -m 0755 ${B}/attest_ca ${D}${bindir}/attest_ca
+    install -m 0755 ${B}/attest_pubkey ${D}${bindir}/attest_pubkey
 }

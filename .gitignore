@@ -5,6 +5,9 @@
 
 # Yocto/OpenEmbedded build output (regenerable)
 build/
+tmp-glibc/
+sstate-cache/
+downloads/
 build-openstlinuxweston-stm32mp1/*
 !build-openstlinuxweston-stm32mp1/conf/
 !build-openstlinuxweston-stm32mp1/conf/**
